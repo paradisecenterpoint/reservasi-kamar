@@ -1,0 +1,940 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+<title>Hotel Booking</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+
+body{
+font-family:Arial;
+margin:0;
+background:#f4f4f4;
+}
+
+.hero{
+position:relative;
+width:100%;
+height:420px;
+overflow:hidden;
+display:flex;
+align-items:center;
+justify-content:center;
+text-align:center;
+color:white;
+background:black; /* fallback agar tidak abu */
+}
+
+.hero-slider{
+position:absolute;
+top:0;
+left:0;
+width:100%;
+height:100%;
+overflow:hidden;
+}
+
+.slide{
+position:absolute;
+top:0;
+left:0;
+width:100%;
+height:100%;
+object-fit:cover;
+object-position:center;
+opacity:0;
+transition:opacity 1s ease-in-out;
+}
+
+.slide.active{
+opacity:1;
+}
+
+/* overlay gelap agar teks terlihat */
+
+.hero::before{
+content:"";
+position:absolute;
+top:0;
+left:0;
+width:100%;
+height:100%;
+background:rgba(0,0,0,0.4);
+z-index:1;
+}
+
+.hero-content{
+position:relative;
+z-index:2;
+max-width:700px;
+padding:20px;
+}
+
+.hero h1{
+font-size:42px;
+margin-bottom:15px;
+}
+
+.hero p{
+font-size:18px;
+margin-bottom:25px;
+}
+
+.hero-btn{
+background:#25D366;
+color:white;
+padding:14px 28px;
+border-radius:6px;
+text-decoration:none;
+font-size:18px;
+}
+
+.hero-btn:hover{
+background:#1ebe5d;
+}
+
+.container{
+max-width:1100px;
+margin:auto;
+padding:20px;
+}
+
+.search-box{
+background:white;
+padding:20px;
+border-radius:10px;
+margin-bottom:20px;
+}
+
+input,select{
+width:100%;
+padding:12px;
+margin-top:8px;
+margin-bottom:15px;
+box-sizing:border-box;
+}
+
+.rooms{
+display:grid;
+grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
+gap:20px;
+}
+
+.card{
+background:white;
+border-radius:10px;
+overflow:hidden;
+box-shadow:0 3px 10px rgba(0,0,0,0.1);
+}
+
+.slider{
+position:relative;
+height:200px;
+overflow:hidden;
+}
+
+.slider img{
+width:100%;
+height:200px;
+object-fit:cover;
+}
+
+.prev,.next{
+position:absolute;
+top:50%;
+transform:translateY(-50%);
+background:rgba(0,0,0,0.5);
+color:white;
+border:none;
+padding:8px 12px;
+cursor:pointer;
+}
+
+.prev{left:5px;}
+.next{right:5px;}
+
+.dots{
+position:absolute;
+bottom:8px;
+width:100%;
+text-align:center;
+}
+
+.dots span{
+height:8px;
+width:8px;
+margin:3px;
+background:#bbb;
+border-radius:50%;
+display:inline-block;
+}
+
+.dots .active{
+background:white;
+}
+
+.card-body{
+padding:15px;
+}
+
+.features{
+font-size:13px;
+color:#666;
+}
+
+.price{
+font-size:20px;
+font-weight:bold;
+color:#e67e22;
+}
+
+.night-prices{
+font-size:13px;
+background:#fafafa;
+padding:8px;
+border-radius:6px;
+margin-top:10px;
+}
+
+.total-box{
+background:white;
+padding:20px;
+border-radius:10px;
+margin-top:20px;
+}
+
+button{
+background:#25D366;
+color:white;
+border:none;
+padding:15px;
+width:100%;
+font-size:16px;
+cursor:pointer;
+}
+
+#imageZoom{
+position:fixed;
+top:0;
+left:0;
+width:100%;
+height:100%;
+background:rgba(0,0,0,0.9);
+display:none;
+align-items:center;
+justify-content:center;
+z-index:9999;
+cursor:zoom-out;
+}
+
+#imageZoom img{
+max-width:90%;
+max-height:90%;
+border-radius:10px;
+box-shadow:0 0 30px black;
+}
+
+.map-section{
+margin-top:40px;
+text-align:center;
+}
+
+.map-section h2{
+margin-bottom:15px;
+}
+
+.map-section iframe{
+width:100%;
+height:350px;
+border:0;
+border-radius:10px;
+}
+
+.footer{
+background:#111;
+color:white;
+margin-top:40px;
+padding-top:40px;
+}
+
+.footer-container{
+max-width:1100px;
+margin:auto;
+display:grid;
+grid-template-columns:repeat(auto-fit,minmax(250px,1fr));
+gap:30px;
+padding:20px;
+}
+
+.footer-col h3{
+margin-bottom:15px;
+font-size:18px;
+}
+
+.footer-col p{
+font-size:14px;
+line-height:1.6;
+color:#ddd;
+}
+
+.footer-bottom{
+text-align:center;
+border-top:1px solid #333;
+padding:15px;
+font-size:13px;
+margin-top:20px;
+}
+
+</style>
+</head>
+
+
+
+<body>
+
+<!--PERBESAR GAMBAR --> 
+
+<div id="imageZoom" onclick="closeZoom()">
+<img id="zoomImg">
+</div>
+
+<!--FOTO SLIDE ATAS & TEXT-->
+
+<div class="hero">
+
+<div class="hero-slider">
+<img src="2.jpg" class="slide active">
+<img src="lobby.webp" class="slide">
+<img src="fn2.webp" class="slide">
+<img src="cafe.jpg" class="slide">
+</div>
+
+<div class="hero-content">
+
+<h1>Nikmati Pengalaman Menginap yang Nyaman</h1>
+
+<p>
+Paradise Center Point Hotel menghadirkan kamar nyaman,
+fasilitas lengkap, dan pelayanan terbaik untuk perjalanan Anda.
+</p>
+
+<a href="#rooms" class="hero-btn">Reservasi Sekarang</a>
+
+
+</div>
+
+</div>
+
+<!--TEXT BOX CI CO BF-->
+
+<div class="container">
+
+<div class="search-box">
+
+<label>Check In</label>
+<input type="date" id="checkin">
+
+<label>Check Out</label>
+<input type="date" id="checkout">
+<div id="package-per-night"></div>
+
+
+</div>
+
+<!--DATA TAMU-->
+
+<div class="rooms" id="rooms"></div>
+
+<div class="total-box">
+
+<h3>Data Tamu</h3>
+
+<input id="name" placeholder="Nama">
+<input id="keterangan" placeholder="Permintaan">
+
+<h3>Total Harga</h3>
+<p id="total">Rp 0</p>
+
+<button id="btnWA" onclick="sendWA()">Reservasi via WhatsApp</button>
+
+</div>
+
+</div>
+
+<script>
+
+const API_URL="https://script.google.com/macros/s/AKfycbxakTZTKa3NCKz4NWvLx45bh4fEh5MPbbdGTxY8RZc9l4tCPh5flhl9QjnuRWE2IibA/exec";
+const phone="6285156318374";
+
+/* SLIDER HERO */ 
+let slides=document.querySelectorAll(".slide");
+let current=0;
+
+function heroSlider(){
+
+slides.forEach(s=>s.classList.remove("active"));
+
+current++;
+
+if(current>=slides.length){
+current=0;
+}
+
+slides[current].classList.add("active");
+
+}
+
+setInterval(heroSlider,4000);
+
+/* DATA KAMAR */
+
+const roomInfo=[
+
+{
+id:"Junior Room",
+name:"Junior Room",
+images:["jn1.webp","jn2.webp"],
+desc:"Double Bed King Size | Non View | Maximum Occupancy 2 Person",
+/* features:"Wifi • TV • AC • Standing Shower ( Hot / Cold)" */
+},
+
+{
+id:"Junior King",
+name:"Junior King",
+images:["jk1.webp","jk2.webp"],
+desc:"Double Bed King Size | Sofa Bed | Maximum Occupancy 2 Person",
+
+},
+
+{
+id:"Junior View",
+name:"Junior View",
+images:["jv1.webp"],
+desc:"Double Bed King Size | View Mountaint | Maximum Occupancy 2 Person",
+features:"Wifi • TV • AC"
+},
+
+{
+id:"Superior Room",
+name:"Superior Room",
+images:["sp1.webp","sp2.webp"],
+desc:"Twin Double Bed King Size |  Non View | Maximum Occupancy 4 Person",
+features:"Wifi • TV • AC"
+},
+
+{
+id:"Superior Fantasy",
+name:"Superior Fantasy",
+images:["fn1.webp","fn2.webp","fn3.webp"],
+desc:"Twin Double Bed King Size | Piratess & Princess | Maximum Occupancy 4 Person",
+features:"Wifi • TV • AC"
+},
+
+{
+id:"Deluxe Room",
+name:"Deluxe Room",
+images:["dl1.webp","dl2.webp"],
+desc:"Twin Double Bed King Size | View Mountaint | Maximum Occupancy 4 Person",
+features:"Wifi • TV • AC"
+},
+
+{
+id:"Executive Room",
+name:"Executive Room",
+images:["exe1.webp","exe2.webp"],
+desc:"Twin Double Bed King Size | Balcony | Maximum Occupancy 4 Person",
+features:"Wifi • TV • AC"
+}
+
+];
+
+let prices={};
+let seasons=[];
+
+/* LOAD GOOGLE SHEET */
+
+let script=document.createElement("script");
+script.src=API_URL+"?callback=loadData";
+document.body.appendChild(script);
+
+function loadData(data){
+
+data.rooms.forEach(r=>{
+
+prices[r.room]={
+pinkwd:r.pinkwd,
+pinkwk:r.pinkwk,
+orangewd:r.orangewd,
+orangewk:r.orangewk
+}
+
+});
+
+seasons=data.seasons;
+
+}
+
+/* RENDER ROOM */
+
+function renderRooms(){
+
+let container=document.getElementById("rooms");
+
+roomInfo.forEach(r=>{
+
+container.innerHTML+=`
+
+<div class="card">
+
+<div class="slider">
+
+<img 
+src="${r.images[0]}" 
+id="img-${r.id}" 
+loading="lazy"
+onclick="openZoom(this.src)">
+
+<button class="prev" onclick="prevSlide('${r.id}')">&#10094;</button>
+<button class="next" onclick="nextSlide('${r.id}')">&#10095;</button>
+
+<div class="dots" id="dots-${r.id}"></div>
+
+</div>
+
+<div class="card-body">
+
+<h3>${r.name}</h3>
+
+<p>${r.desc}</p>
+
+
+<label>Jumlah kamar</label>
+<input type="number" id="${r.id}" value="0" min="0">
+
+<div class="night-prices" id="nights-${r.id}"></div>
+
+</div>
+
+</div>
+
+`;
+
+});
+
+}
+
+renderRooms();
+
+/* SLIDER */
+
+let sliderIndex={};
+
+roomInfo.forEach(room=>{
+
+sliderIndex[room.id]=0;
+
+setInterval(()=>{
+nextSlide(room.id);
+},10000);
+
+});
+
+function showSlide(roomId){
+
+let room=roomInfo.find(r=>r.id===roomId);
+
+document.getElementById("img-"+roomId).src=room.images[sliderIndex[roomId]];
+
+}
+
+function nextSlide(roomId){
+
+let room=roomInfo.find(r=>r.id===roomId);
+
+sliderIndex[roomId]++;
+
+if(sliderIndex[roomId]>=room.images.length){
+sliderIndex[roomId]=0;
+}
+
+showSlide(roomId);
+
+}
+
+function prevSlide(roomId){
+
+let room=roomInfo.find(r=>r.id===roomId);
+
+sliderIndex[roomId]--;
+
+if(sliderIndex[roomId]<0){
+sliderIndex[roomId]=room.images.length-1;
+}
+
+showSlide(roomId);
+
+}
+
+/* zoom */
+function openZoom(src){
+
+let zoom=document.getElementById("imageZoom");
+let img=document.getElementById("zoomImg");
+
+img.src=src;
+zoom.style.display="flex";
+
+}
+
+function closeZoom(){
+
+document.getElementById("imageZoom").style.display="none";
+
+}
+
+/* SEASON */
+
+function getSeason(date){
+
+let d=new Date(date);
+
+for(let s of seasons){
+
+let start=new Date(s.start);
+let end=new Date(s.end);
+
+if(d>=start && d<=end){
+return s.season;
+}
+
+}
+
+return "pinkwd";
+
+}
+
+function formatDateLocal(date){
+let y = date.getFullYear();
+let m = String(date.getMonth()+1).padStart(2,'0');
+let d = String(date.getDate()).padStart(2,'0');
+return `${y}-${m}-${d}`;
+}
+
+/* CALCULATE */
+
+document.getElementById("checkin").addEventListener("change",generateNightPackages);
+document.getElementById("checkout").addEventListener("change",generateNightPackages);
+
+function generateNightPackages(){
+
+let checkin=document.getElementById("checkin").value;
+let checkout=document.getElementById("checkout").value;
+
+if(!checkin || !checkout) return;
+
+let start=new Date(checkin);
+let end=new Date(checkout);
+
+let html="";
+
+let date=new Date(start);
+
+while(date<end){
+
+let dateKey=formatDateLocal(date);
+
+let label=date.toLocaleDateString("id-ID",{
+weekday:"long",
+day:"numeric",
+month:"long"
+});
+
+html+=`
+<label>${label}</label>
+<select id="package-per-night-${dateKey}">
+<option value="breakfast">Include Breakfast 2 pax</option>
+<option value="roomonly">Room Only</option>
+</select>
+`;
+
+date.setDate(date.getDate()+1);
+
+}
+
+document.getElementById("package-per-night").innerHTML=html;
+
+}
+
+document.addEventListener("input",calculate);
+document.getElementById("package-per-night").addEventListener("change",calculate);
+
+
+function calculate(){
+
+let checkin=document.getElementById("checkin").value;
+let checkout=document.getElementById("checkout").value;
+let packageType="breakfast";
+
+if(!checkin || !checkout) return;
+
+let start=new Date(checkin);
+let end=new Date(checkout);
+
+let total=0;
+
+roomInfo.forEach(r=>{
+
+let qty=parseInt(document.getElementById(r.id).value)||0;
+
+let date=new Date(start);
+
+let html="";
+
+while(date<end){
+
+let season=getSeason(date);
+
+let price=prices[r.id]?.[season] || 0;
+
+let dateKey=formatDateLocal(date);
+
+let packageNight=document.getElementById("package-per-night-"+dateKey)?.value || "breakfast";
+
+if(packageNight==="roomonly"){
+price-=25000;
+}
+
+let tanggal=date.toLocaleDateString("id-ID",{weekday:"long",day:"numeric",month:"long"});
+
+html+=`<div>${tanggal} : Rp ${price.toLocaleString()}</div>`;
+
+if(qty>0){
+total+=price*qty;
+}
+
+date.setDate(date.getDate()+1);
+
+}
+
+document.getElementById("nights-"+r.id).innerHTML=html;
+
+});
+
+document.getElementById("total").innerText="Rp "+total.toLocaleString();
+
+}
+
+/* PAYMENT DEADLINE */
+
+function paymentDeadline(checkin){
+
+let date=new Date(checkin);
+
+date.setDate(date.getDate()-3);
+
+return date.toLocaleDateString("id-ID",{day:"numeric",month:"long",year:"numeric"});
+
+}
+
+/* WHATSAPP */
+
+function sendWA(){
+
+let name=document.getElementById("name").value;
+let keterangan=document.getElementById("keterangan").value;
+
+let checkin=new Date(document.getElementById("checkin").value).toLocaleDateString("id-ID",{day:"numeric",month:"long",year:"numeric"});
+
+let checkout=new Date(document.getElementById("checkout").value).toLocaleDateString("id-ID",{day:"numeric",month:"long",year:"numeric"});
+
+
+
+/* VALIDASI FORM */
+
+if(!name ||   !checkin || !checkout){
+alert("Mohon lengkapi semua data reservasi terlebih dahulu");
+return;
+}
+let roomSelected=false;
+
+roomInfo.forEach(r=>{
+let qty=parseInt(document.getElementById(r.id).value)||0;
+
+if(qty>0){
+roomSelected=true;
+}
+});
+
+if(!roomSelected){
+alert("Silakan pilih minimal 1 kamar");
+return;
+}
+
+let start=new Date(checkin);
+let end=new Date(checkout);
+
+if(end<=start){
+alert("Tanggal check-out harus setelah check-in");
+return;
+}
+
+let nights=(end-start)/(1000*60*60*24);
+
+let total=document.getElementById("total").innerText;
+
+let deadline=paymentDeadline(checkin);
+
+
+let roomList="";
+let roomDetail="";
+
+roomInfo.forEach(r=>{
+
+let qty=parseInt(document.getElementById(r.id).value)||0;
+
+if(qty>0){
+
+/* daftar tipe kamar */
+roomList+=`${qty} Room ${r.name}\n`;
+
+let date=new Date(start);
+
+while(date<end){
+
+let season=getSeason(date);
+
+let price=prices[r.id]?.[season] || 0;
+
+let dateKey=formatDateLocal(date);
+
+let packageNight=document.getElementById("package-per-night-"+dateKey)?.value || "breakfast";
+
+if(packageNight==="roomonly"){
+price-=25000;
+}
+
+let paketText = packageNight==="roomonly"
+? "Room Only"
+: "Include Breakfast 2 pax";
+
+let tanggal=date.toLocaleDateString("id-ID",{
+weekday:"long",
+day:"numeric",
+month:"long",
+year:"numeric"
+});
+
+roomDetail+=`
+${tanggal}
+${r.name} (${qty} Room) : Rp ${price.toLocaleString()}/night/${paketText}
+
+`;
+
+date.setDate(date.getDate()+1);
+
+
+
+
+}
+
+}
+
+});
+
+let message=`Terimakasih telah memilih Paradise Center Point Hotel and Oleh-Oleh sebagai pilihan akomodasi Bapak/Ibu. Kami dengan senang hati mengkonfirmasi reservasi kamar Bapak/Ibu dengan detail sebagai berikut :
+
+*NAMA* :
+Bapak/Ibu ${name}
+
+*CHECK IN* :
+${checkin}
+
+*CHECK OUT* :
+${checkout}
+
+*LAMA MENGINAP* :
+${nights} Malam
+
+*TIPE & JUMLAH KAMAR* :
+${roomList}
+
+*HARGA KAMAR* :
+${roomDetail}
+
+*PERMINTAAN* :
+${keterangan}
+
+*TOTAL PEMBAYARAN* :
+${total}
+
+Berikut adalah informasi nomor rekening untuk melakukan pembayaran :
+
+*Bank BCA*
+8162208208
+*PT Batu Putra Mulia*
+
+Mohon lakukan pembayaran *sebelum tanggal ${deadline} sebelum pukul 21.00 WIB* dan kirim bukti pembayaran setelah transfer.
+
+Kami tunggu kedatangan Bapak/Ibu di Paradise Center Point Hotel and Oleh-Oleh dan semoga memiliki pengalaman menginap yang menyenangkan.
+
+Hormat Kami
+
+Paradise Center Point Hotel and Oleh-Oleh
+
+*Confirm letter ini bukan merupakan bukti booking yang valid. Semua pembayaran bersifat non-refundable*`;
+
+window.open("https://wa.me/"+phone+"?text="+encodeURIComponent(message));
+
+}
+
+</script>
+<div class="map-section">
+
+<h2>Lokasi Hotel</h2>
+
+<iframe
+src="https://www.google.com/maps?q=Paradise+Center+Point+Hotel+Blitar&output=embed"
+loading="lazy"
+referrerpolicy="no-referrer-when-downgrade">
+</iframe>
+
+<footer class="footer">
+
+<div class="footer-container">
+
+<div class="footer-col">
+<h3>Paradise Center Point Hotel</h3>
+<p>
+Paradise Center Point Hotel & Oleh-Oleh menghadirkan
+pengalaman menginap yang nyaman dengan fasilitas lengkap
+dan pelayanan terbaik di Kota Batu.
+</p>
+</div>
+
+<div class="footer-col">
+<h3>Alamat</h3>
+<p>
+📍  Jl. Diponegoro No.5 B, Sisir,<br>
+ Kec. Batu, Kota Batu, Jawa Timur 65314
+</p>
+</div>
+
+<div class="footer-col">
+<h3>Kontak</h3>
+<p>☎ 0341-3382844</p>
+<p>💬 +6285183273332</p>
+<p>🕒 Receptionist 24 Jam</p>
+</div>
+
+</div>
+
+<div class="footer-bottom">
+© 2026 Paradise Center Point Hotel. All Rights Reserved
+</div>
+
+</footer>
+
+</div>
+</body>
+</html>
