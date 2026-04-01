@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html>
 <head>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#25D366">
 
 <title>Hotel Booking</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -342,6 +344,13 @@ fasilitas lengkap, dan pelayanan terbaik untuk perjalanan Anda.
 
 </div>
 
+<h3>Pilih Promo</h3>
+<select id="promoSelect">
+  <option value="none">Tidak ada promo</option>
+  <option value="persen">Diskon 5%</option>
+  <option value="nominal">Potongan Rp 100.000</option>
+</select>
+
 <!--DATA TAMU-->
 
 <div class="rooms" id="rooms"></div>
@@ -352,6 +361,8 @@ fasilitas lengkap, dan pelayanan terbaik untuk perjalanan Anda.
 
 <input id="name" placeholder="Nama">
 <input id="keterangan" placeholder="Permintaan">
+<label>Nomor WhatsApp Tujuan</label>
+<input id="phone" placeholder="Contoh: 6281234567890">
 
 <h3>Total Harga</h3>
 <p id="total">Rp 0</p>
@@ -364,8 +375,10 @@ fasilitas lengkap, dan pelayanan terbaik untuk perjalanan Anda.
 
 <script>
 
-const API_URL="https://script.google.com/macros/s/AKfycbxakTZTKa3NCKz4NWvLx45bh4fEh5MPbbdGTxY8RZc9l4tCPh5flhl9QjnuRWE2IibA/exec";
-const phone="6285183273332";
+const API_URL="https://script.google.com/macros/s/AKfycbxjfcSIUm5_cTY_bRYa9vJD00XHsSOCaEveIBLkivzbu_63Jhr2CET_eFGlYnVIvfzN/exec";
+
+document.getElementById("promoSelect").addEventListener("change", calculate);
+
 
 /* SLIDER HERO */ 
 let slides=document.querySelectorAll(".slide");
@@ -462,18 +475,27 @@ function loadData(data){
 
 data.rooms.forEach(r=>{
 
-prices[r.room]={
-pinkwd:r.pinkwd,
-pinkwk:r.pinkwk,
-orangewd:r.orangewd,
-orangewk:r.orangewk
+prices[r.room.trim()] = {
+  pinkwd:r.pinkwd,
+  pinkwk:r.pinkwk,
+  orangewd:r.orangewd,
+  orangewk:r.orangewk,
+  ungu:r.ungu,
+  biru:r.biru,
+  hijau:r.hijau,
+  gold:r.gold
 }
 
 });
 
-seasons=data.seasons;
+  seasons = data.seasons;
+  promos = data.promo || [];
 
+  console.log("PRICES:", prices);
+
+  calculate(); // 🔥 PENTING
 }
+
 
 /* RENDER ROOM */
 
@@ -614,12 +636,14 @@ return "pinkwd";
 
 }
 
+
 function formatDateLocal(date){
 let y = date.getFullYear();
 let m = String(date.getMonth()+1).padStart(2,'0');
 let d = String(date.getDate()).padStart(2,'0');
 return `${y}-${m}-${d}`;
 }
+
 
 /* CALCULATE */
 
@@ -669,61 +693,96 @@ document.getElementById("package-per-night").innerHTML=html;
 document.addEventListener("input",calculate);
 document.getElementById("package-per-night").addEventListener("change",calculate);
 
+function hitungHarga(basePrice, packageNight){
+
+let price = Number(basePrice);
+
+/* ROOM ONLY */
+if(packageNight === "roomonly"){
+price -= 25000;
+}
+
+/* PROMO 100K */
+let promo = document.getElementById("promoSelect").value;
+
+if(promo === "nominal"){
+price -= 100000;
+}
+
+return Math.max(price,0);
+}
 
 function calculate(){
 
-let checkin=document.getElementById("checkin").value;
-let checkout=document.getElementById("checkout").value;
-let packageType="breakfast";
+let checkinVal = document.getElementById("checkin").value;
+let checkoutVal = document.getElementById("checkout").value;
 
-if(!checkin || !checkout) return;
+if(!checkinVal || !checkoutVal) return;
 
-let start=new Date(checkin);
-let end=new Date(checkout);
+let start = new Date(checkinVal);
+let end = new Date(checkoutVal);
 
-let total=0;
+let total = 0;
 
 roomInfo.forEach(r=>{
 
-let qty=parseInt(document.getElementById(r.id).value)||0;
+let qty = parseInt(document.getElementById(r.id).value) || 0;
 
-let date=new Date(start);
+let date = new Date(start);
+let html = "";
 
-let html="";
+while(date < end){
 
-while(date<end){
+let season = getSeason(date);
+let basePrice = prices[r.id.trim()]?.[season] || 0;
+let dateKey = formatDateLocal(date);
 
-let season=getSeason(date);
+let packageNight = document.getElementById("package-per-night-"+dateKey)?.value || "breakfast";
 
-let price=prices[r.id]?.[season] || 0;
+let finalPrice = hitungHarga(basePrice, packageNight);
 
-let dateKey=formatDateLocal(date);
+let tanggal = date.toLocaleDateString("id-ID",{weekday:"long",day:"numeric",month:"long"});
 
-let packageNight=document.getElementById("package-per-night-"+dateKey)?.value || "breakfast";
+let paketText = packageNight === "roomonly"
+? "Room Only (-25K)"
+: "Include Breakfast";
 
-if(packageNight==="roomonly"){
-price-=25000;
-}
+/* TAMPILAN */
+html += `
+<div>
+${tanggal} : Rp ${finalPrice.toLocaleString()}
+<small>(${paketText})</small>
+</div>
+`;
 
-let tanggal=date.toLocaleDateString("id-ID",{weekday:"long",day:"numeric",month:"long"});
-
-html+=`<div>${tanggal} : Rp ${price.toLocaleString()}</div>`;
-
-if(qty>0){
-total+=price*qty;
+if(qty > 0){
+total += finalPrice * qty;
 }
 
 date.setDate(date.getDate()+1);
-
 }
 
-document.getElementById("nights-"+r.id).innerHTML=html;
+document.getElementById("nights-"+r.id).innerHTML = html;
 
 });
 
-document.getElementById("total").innerText="Rp "+total.toLocaleString();
+/* PROMO GLOBAL 5% */
+let promo = document.getElementById("promoSelect").value;
+let finalTotal = total;
 
+if(promo === "persen"){
+finalTotal = total - (total * 0.05);
 }
+
+let totalText = "Rp " + finalTotal.toLocaleString();
+
+if(promo === "persen"){
+totalText += " (Diskon 5%)";
+}
+
+document.getElementById("total").innerText = totalText;
+}
+
 
 /* PAYMENT DEADLINE */
 
@@ -731,7 +790,7 @@ function paymentDeadline(checkin){
 
 let date=new Date(checkin);
 
-date.setDate(date.getDate()-3);
+date.setDate(date.getDate()-2);
 
 return date.toLocaleDateString("id-ID",{day:"numeric",month:"long",year:"numeric"});
 
@@ -795,28 +854,41 @@ let qty=parseInt(document.getElementById(r.id).value)||0;
 
 if(qty>0){
 
-/* daftar tipe kamar */
 roomList+=`${qty} Room ${r.name}\n`;
 
 let date=new Date(start);
 
 while(date<end){
 
-let season=getSeason(date);
+let dateKey = formatDateLocal(date); // WAJIB DI ATAS
 
-let price=prices[r.id]?.[season] || 0;
+let season = getSeason(date);
 
-let dateKey=formatDateLocal(date);
+let basePrice = prices[r.id.trim()]?.[season] || 0;
 
-let packageNight=document.getElementById("package-per-night-"+dateKey)?.value || "breakfast";
+let packageNight = document.getElementById("package-per-night-"+dateKey)?.value || "breakfast";
 
-if(packageNight==="roomonly"){
-price-=25000;
+let normalPrice = Number(basePrice);
+
+/* ROOM ONLY */
+if(packageNight === "roomonly"){
+normalPrice -= 25000;
 }
 
+/* FINAL PRICE */
+let price = hitungHarga(basePrice, packageNight);
 let paketText = packageNight==="roomonly"
 ? "Room Only"
 : "Include Breakfast 2 pax";
+
+let promoText = document.getElementById("promoSelect").value;
+
+let promoLabel = "";
+if(promoText === "persen"){
+  promoLabel = " (Diskon 5%)";
+}else if(promoText === "nominal"){
+  promoLabel = " (Potongan 100.000)";
+}
 
 let tanggal=date.toLocaleDateString("id-ID",{
 weekday:"long",
@@ -825,11 +897,26 @@ month:"long",
 year:"numeric"
 });
 
+
+if(promoText === "none"){
+
 roomDetail+=`
 ${tanggal}
 ${r.name} (${qty} Room) : Rp ${price.toLocaleString()}/night/${paketText}
 
 `;
+
+}else{
+
+roomDetail+=`
+${tanggal}
+${r.name} (${qty} Room) : 
+~Rp ${normalPrice.toLocaleString()}/night/${paketText}~
+Rp ${price.toLocaleString()}/night/${paketText}
+
+`;
+
+}
 
 date.setDate(date.getDate()+1);
 
@@ -876,6 +963,8 @@ Berikut adalah informasi nomor rekening untuk melakukan pembayaran :
 
 Mohon lakukan pembayaran *sebelum tanggal ${deadline} sebelum pukul 21.00 WIB* dan kirim bukti pembayaran setelah transfer.
 
+*Untuk proses yang lebih mudah, mohon kiranya saat transfer tidak mencantumkan berita/keterangan apapun*
+
 Kami tunggu kedatangan Bapak/Ibu di Paradise Center Point Hotel and Oleh-Oleh dan semoga memiliki pengalaman menginap yang menyenangkan.
 
 Hormat Kami
@@ -883,6 +972,17 @@ Hormat Kami
 Paradise Center Point Hotel and Oleh-Oleh
 
 *Confirm letter ini bukan merupakan bukti booking yang valid. Semua pembayaran bersifat non-refundable*`;
+
+let phone = document.getElementById("phone").value;
+
+/* VALIDASI NOMOR */
+if(!phone){
+alert("Nomor WhatsApp tujuan wajib diisi");
+return;
+}
+
+/* FORMAT NOMOR (biar aman) */
+phone = phone.replace(/^0/, "62"); // ubah 08 → 628
 
 window.open("https://wa.me/"+phone+"?text="+encodeURIComponent(message));
 
