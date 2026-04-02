@@ -743,9 +743,13 @@ let finalPrice = hitungHarga(basePrice, packageNight);
 
 let tanggal = date.toLocaleDateString("id-ID",{weekday:"long",day:"numeric",month:"long"});
 
-let paketText = packageNight === "roomonly"
-? "Room Only (-25K)"
-: "Include Breakfast";
+let paketText = "";
+
+if(packageNight === "roomonly"){
+  paketText = "Room Only";
+}else{
+  paketText = "Include Breakfast 2 pax";
+}
 
 /* TAMPILAN */
 html += `
@@ -790,39 +794,46 @@ function paymentDeadline(checkin){
 
 let date=new Date(checkin);
 
-date.setDate(date.getDate()-2);
+date.setDate(date.getDate()-1);
 
 return date.toLocaleDateString("id-ID",{day:"numeric",month:"long",year:"numeric"});
 
+}
+
+function closeSummary(){
+  document.getElementById("summaryModal").style.display = "none";
+}
+
+function confirmWA(){
+  window.open("https://wa.me/"+window.tempPhone+"?text="+encodeURIComponent(window.tempWA));
+  closeSummary();
 }
 
 /* WHATSAPP */
 
 function sendWA(){
 
-let name=document.getElementById("name").value;
-let keterangan=document.getElementById("keterangan").value;
+let name = document.getElementById("name").value;
+let keterangan = document.getElementById("keterangan").value;
 
-let checkin=new Date(document.getElementById("checkin").value).toLocaleDateString("id-ID",{day:"numeric",month:"long",year:"numeric"});
+let checkinVal = document.getElementById("checkin").value;
+let checkoutVal = document.getElementById("checkout").value;
 
-let checkout=new Date(document.getElementById("checkout").value).toLocaleDateString("id-ID",{day:"numeric",month:"long",year:"numeric"});
-
-
-
-/* VALIDASI FORM */
-
-if(!name ||   !checkin || !checkout){
+if(!name || !checkinVal || !checkoutVal){
 alert("Mohon lengkapi semua data reservasi terlebih dahulu");
 return;
 }
-let roomSelected=false;
+
+/* FORMAT TANGGAL DISPLAY */
+let checkin = new Date(checkinVal).toLocaleDateString("id-ID",{day:"numeric",month:"long",year:"numeric"});
+let checkout = new Date(checkoutVal).toLocaleDateString("id-ID",{day:"numeric",month:"long",year:"numeric"});
+
+/* VALIDASI KAMAR */
+let roomSelected = false;
 
 roomInfo.forEach(r=>{
-let qty=parseInt(document.getElementById(r.id).value)||0;
-
-if(qty>0){
-roomSelected=true;
-}
+let qty = parseInt(document.getElementById(r.id).value) || 0;
+if(qty > 0) roomSelected = true;
 });
 
 if(!roomSelected){
@@ -830,98 +841,88 @@ alert("Silakan pilih minimal 1 kamar");
 return;
 }
 
-let start=new Date(checkin);
-let end=new Date(checkout);
+/* DATE LOOP */
+let start = new Date(checkinVal);
+let end = new Date(checkoutVal);
 
-if(end<=start){
+if(end <= start){
 alert("Tanggal check-out harus setelah check-in");
 return;
 }
 
-let nights=(end-start)/(1000*60*60*24);
+let nights = (end - start) / (1000*60*60*24);
+let total = document.getElementById("total").innerText;
+let deadline = paymentDeadline(checkinVal);
 
-let total=document.getElementById("total").innerText;
+let roomList = "";
+let roomDetail = "";
 
-let deadline=paymentDeadline(checkin);
-
-
-let roomList="";
-let roomDetail="";
-
+/* LOOP ROOM */
 roomInfo.forEach(r=>{
 
-let qty=parseInt(document.getElementById(r.id).value)||0;
+let qty = parseInt(document.getElementById(r.id).value) || 0;
 
-if(qty>0){
+if(qty > 0){
 
-roomList+=`${qty} Room ${r.name}\n`;
+roomList += `${qty} Room ${r.name}\n`;
 
-let date=new Date(start);
+let date = new Date(start);
 
-while(date<end){
+while(date < end){
 
-let dateKey = formatDateLocal(date); // WAJIB DI ATAS
-
+let dateKey = formatDateLocal(date);
 let season = getSeason(date);
-
 let basePrice = prices[r.id.trim()]?.[season] || 0;
 
 let packageNight = document.getElementById("package-per-night-"+dateKey)?.value || "breakfast";
 
-let normalPrice = Number(basePrice);
+/* PAKET TEXT */
+let paketText = packageNight === "roomonly"
+? "Room Only"
+: "Include Breakfast 2 pax";
 
-/* ROOM ONLY */
+/* HARGA FINAL (SATU SUMBER) */
+let price = hitungHarga(basePrice, packageNight);
+
+/* HARGA NORMAL (UNTUK CORET) */
+let normalPrice = Number(basePrice);
 if(packageNight === "roomonly"){
 normalPrice -= 25000;
 }
 
-/* FINAL PRICE */
-let price = hitungHarga(basePrice, packageNight);
-let paketText = packageNight==="roomonly"
-? "Room Only"
-: "Include Breakfast 2 pax";
+/* PROMO */
+let promo = document.getElementById("promoSelect").value;
 
-let promoText = document.getElementById("promoSelect").value;
-
-let promoLabel = "";
-if(promoText === "persen"){
-  promoLabel = " (Diskon 5%)";
-}else if(promoText === "nominal"){
-  promoLabel = " (Potongan 100.000)";
-}
-
-let tanggal=date.toLocaleDateString("id-ID",{
+/* FORMAT TANGGAL */
+let tanggal = date.toLocaleDateString("id-ID",{
 weekday:"long",
 day:"numeric",
 month:"long",
 year:"numeric"
 });
 
+/* OUTPUT */
+if(promo === "none"){
 
-if(promoText === "none"){
-
-roomDetail+=`
+roomDetail += `
 ${tanggal}
-${r.name} (${qty} Room) : Rp ${price.toLocaleString()}/night/${paketText}
+${r.name} (${qty} Room) : Rp ${price.toLocaleString()}/night (${paketText})
 
 `;
 
 }else{
 
-roomDetail+=`
+roomDetail += `
 ${tanggal}
-${r.name} (${qty} Room) : 
-~Rp ${normalPrice.toLocaleString()}/night/${paketText}~
-Rp ${price.toLocaleString()}/night/${paketText}
+${r.name} (${qty} Room) :
+~Rp ${normalPrice.toLocaleString()}~
+Rp ${price.toLocaleString()}/night (${paketText})
 
 `;
 
 }
 
 date.setDate(date.getDate()+1);
-
-
-
 
 }
 
@@ -984,7 +985,12 @@ return;
 /* FORMAT NOMOR (biar aman) */
 phone = phone.replace(/^0/, "62"); // ubah 08 → 628
 
-window.open("https://wa.me/"+phone+"?text="+encodeURIComponent(message));
+document.getElementById("summaryContent").innerText = message;
+document.getElementById("summaryModal").style.display = "flex";
+
+/* simpan sementara */
+window.tempWA = message;
+window.tempPhone = phone;
 
 }
 
@@ -1036,5 +1042,21 @@ dan pelayanan terbaik di Kota Batu.
 </footer>
 
 </div>
+
+<div id="summaryModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); z-index:9999; justify-content:center; align-items:center;">
+
+  <div style="background:white; width:90%; max-width:500px; border-radius:10px; padding:20px; max-height:90%; overflow:auto;">
+
+    <h2 style="margin-top:0;">Ringkasan Reservasi</h2>
+
+    <pre id="summaryContent" style="white-space:pre-wrap; font-family:Arial; font-size:14px;"></pre>
+
+    <button onclick="confirmWA()" style="margin-top:10px;">Kirim ke WhatsApp</button>
+    <button onclick="closeSummary()" style="background:#ccc; color:black; margin-top:5px;">Batal</button>
+
+  </div>
+
+</div>
+
 </body>
 </html>
